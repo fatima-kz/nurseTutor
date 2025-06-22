@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createPageUrl } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { Brain, ExternalLink } from "lucide-react";
+
 
 interface LayoutProps {
   children: React.ReactNode;
