@@ -297,10 +297,10 @@ export default function DashboardContent({
                     {getSubscriptionBadge(userProfile)}
                   </div>
                   
-                  {userProfile.subscription_status === 'trial' || userProfile.subscription_end_date && (
+                  {userProfile.subscription_status === 'trial' && (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                       <p className="text-sm text-yellow-800 mb-2">
-                        Trial ends on {format(new Date(userProfile.subscription_end_date), 'MMM dd, yyyy')}
+                        Trial ends on {userProfile.subscription_end_date ? format(new Date(userProfile.subscription_end_date), 'MMM dd, yyyy') : 'N/A'}
                       </p>
                       <CheckoutButton
                         userEmail={userProfile.email}
