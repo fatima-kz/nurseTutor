@@ -186,7 +186,7 @@ export default function Test() {
 
     // Temporarily disable "Next Question" for 3 seconds
     setNextButtonDelay(true);
-    setTimeout(() => setNextButtonDelay(false), 7000);
+    setTimeout(() => setNextButtonDelay(false), 10000);
 
     setSubmittingAnswer(true);
     const correct = selectedAnswer === currentQuestion.correct_answer;
