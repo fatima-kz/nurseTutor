@@ -43,16 +43,13 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
 
             <div className="flex items-center space-x-4">
               {/* AI Assistant Button - Always visible */}
-              <a
-                href="https://ai-assistant-for-us-nurses.zapier.app"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-xl font-medium hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 group"
-              >
-                <Brain className="w-4 h-4" />
-                <span className="hidden sm:inline">AI Assistant</span>
-                <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 transition-transform duration-200" />
-              </a>
+              <Link 
+                    href={createPageUrl("aiAssistant")}
+                    className="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200 hidden sm:inline"
+                  >
+                    AI Assistent
+              </Link>
+
               
               {user ? (
                 <>

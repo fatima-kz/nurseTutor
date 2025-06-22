@@ -10,7 +10,8 @@ export function createPageUrl(pageName: string): string {
     Home: '/',
     Auth: '/auth',
     Dashboard: '/dashboard',
-    Test: '/test'
+    Test: '/test',
+    aiAssistant: '/aiAssistant',
   }
   
   return routes[pageName] || '/'
