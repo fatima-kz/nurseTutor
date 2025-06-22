@@ -225,22 +225,22 @@ export default function DashboardContent({
           </div>
 
           {/* Main Content */}
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-3 gap-8 text-black">
             {/* Test History */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 text-black">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5" />
+                  <CardTitle className="flex items-center gap-2 text-black">
+                    <TrendingUp className="w-5 h-5 text-black" />
                     Recent Test Results
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {testHistory.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500 mb-4">No tests taken yet</p>
+                    <div className="text-center py-8 text-black">
+                      <p className="mb-4 text-black">No tests taken yet</p>
                       <Link href={createPageUrl("Test")}>
-                        <Button className="bg-blue-600 hover:bg-blue-700">
+                        <Button className="bg-blue-600 hover:bg-blue-700 text-black">
                           Take Your First Test
                         </Button>
                       </Link>
@@ -262,7 +262,7 @@ export default function DashboardContent({
                               {format(new Date(test.test_date), 'MMM dd, yyyy')}
                             </TableCell>
                             <TableCell>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 text-black">
                                 <span className="font-medium">{test.percentage_score}%</span>
                                 <Progress value={test.percentage_score} className="w-16" />
                               </div>
@@ -286,18 +286,18 @@ export default function DashboardContent({
             <div>
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-black">
                     <Calendar className="w-5 h-5" />
                     Subscription Status
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between text-black">
                     <span className="text-sm text-gray-600">Status:</span>
                     {getSubscriptionBadge(userProfile)}
                   </div>
                   
-                  {userProfile.subscription_status === 'trial' && userProfile.subscription_end_date && (
+                  {userProfile.subscription_status === 'trial' || userProfile.subscription_end_date && (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                       <p className="text-sm text-yellow-800 mb-2">
                         Trial ends on {format(new Date(userProfile.subscription_end_date), 'MMM dd, yyyy')}
