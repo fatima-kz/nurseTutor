@@ -81,17 +81,25 @@ export default async function Home() {
     <Layout currentPageName="Home">
       <div className="min-h-screen">
         {/* Hero Section */}
-        <section className="relative pt-20 pb-32 overflow-hidden">
+        <section className="relative pt-20 pb-32 overflow-hidden"
+  style={{
+    backgroundImage: "url('/bggg.png')",
+    backgroundSize: "cover",    /* This makes the image "fill" the container */
+    backgroundPosition: "center", /* This centers the image */
+    backgroundRepeat: "no-repeat"
+    // Make sure this path is correct
+        }}
+        >
           <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-indigo-600/10"></div>
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <h1 className="text-5xl md:text-7xl font-bold text-gray-900 leading-tight mb-8">
+              <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight mb-8">
                 Get Licensed
-                <span className="block bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                <span className="block bg-gradient-to-r from-[#a855f7] to-indigo-600 bg-clip-text text-transparent">
                   Faster
                 </span>
               </h1>
-              <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
+              <p className="text-xl md:text-2xl text-white mb-12 max-w-3xl mx-auto leading-relaxed">
                 Prepare for the Nurse Exam with Confidence using our AI-powered platform 
                 with 1000+ practice questions and personalized feedback.
               </p>
@@ -100,32 +108,38 @@ export default async function Home() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
                 <Link 
                   href={createPageUrl("Auth")}
-                  className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-2xl text-lg font-semibold hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 group"
+                  className="inline-flex items-center gap-3 bg-gradient-to-r from-[#a855f7]  to-indigo-600 text-white px-8 py-4 rounded-2xl text-lg font-semibold hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 group"
                 >
                   Start Free Trial
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
                 </Link>
                 
-                <a 
+
+                <Link 
+                  href={createPageUrl("aiAssistant")}
+                  className="inline-flex items-center gap-3 bg-white border-2 border-purple-600 text-purple-600 px-8 py-4 rounded-2xl text-lg font-semibold hover:bg-purple-50 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 group">
+                  <Brain className="w-5 h-5" />
+                  Try AI Assistant
+                  <ExternalLink className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
+                </Link>
+                {/* <a 
                   href="https://ai-assistant-for-us-nurses.zapier.app"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-3 bg-white border-2 border-purple-600 text-purple-600 px-8 py-4 rounded-2xl text-lg font-semibold hover:bg-purple-50 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 group"
-                >
-                  <Brain className="w-5 h-5" />
-                  Try AI Assistant
-                  <ExternalLink className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
-                </a>
+                > */}
+                  
+                {/* </a> */}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 max-w-4xl mx-auto">
                 {stats.map((stat, index) => (
                   <div key={index} className="text-center">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl mb-4">
-                      <stat.icon className="w-8 h-8 text-white" />
-                    </div>
-                    <div className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</div>
-                    <div className="text-gray-600">{stat.label}</div>
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-white/30 border border-white/40 rounded-2xl mb-4 backdrop-blur-sm">
+                    <stat.icon className="w-8 h-8 text-white" />
+                  </div>
+                  <div className="text-3xl font-bold text-white mb-2 drop-shadow">{stat.value}</div>
+                  <div className="text-white/90">{stat.label}</div>
                   </div>
                 ))}
               </div>
@@ -147,7 +161,14 @@ export default async function Home() {
                 Get instant answers to nursing questions, study tips, and personalized guidance 
                 from our specialized AI assistant trained specifically for nursing students.
               </p>
-              <a 
+              <Link 
+                  href={createPageUrl("aiAssistant")}
+                  className="inline-flex items-center gap-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-8 py-4 rounded-2xl text-lg font-semibold hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 group">
+                  
+                  Chat with AI Assistant Now
+                  <ExternalLink className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
+                </Link>
+              {/* <a 
                 href="https://ai-assistant-for-us-nurses.zapier.app"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -155,7 +176,7 @@ export default async function Home() {
               >
                 Chat with AI Assistant Now
                 <ExternalLink className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
-              </a>
+              </a> */}
               <p className="text-sm text-gray-500 mt-4">
                 Free to use • No registration required • Available 24/7
               </p>
@@ -213,13 +234,13 @@ export default async function Home() {
                   className="bg-white p-8 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2"
                 >
                   <div className="flex items-center mb-6">
-                    <Image
+                    {/* <Image
                       src={testimonial.image}
                       alt={testimonial.name}
                       width={60}
                       height={60}
                       className="rounded-full mr-4"
-                    />
+                    /> */}
                     <div>
                       <h4 className="font-semibold text-gray-900">{testimonial.name}</h4>
                       <div className="flex items-center">

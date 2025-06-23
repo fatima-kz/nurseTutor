@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createPageUrl } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { Brain, ExternalLink } from "lucide-react";
 
 
 interface LayoutProps {
@@ -29,26 +30,35 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Navigation Header */}
-      <nav className="bg-white/80 backdrop-blur-md border-b border-blue-100 sticky top-0 z-50">
+      <nav className="bg-white/80 backdrop-blur-md border-b border-blue-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-20">
             <Link href={createPageUrl("Home")} className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">N</span>
+              <div className="w-20 h-20 rounded-xl flex items-center justify-center"
+              style={{
+    backgroundImage: "url('/Logo.png')",
+    backgroundSize: "cover",    /* This makes the image "fill" the container */
+    backgroundPosition: "center", /* This centers the image */
+    backgroundRepeat: "no-repeat"
+    // Make sure this path is correct
+        }}
+              >
+                
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                NurseID
+                NCLEX Harmony
               </span>
             </Link>
 
             <div className="flex items-center space-x-4">
               {/* AI Assistant Button - Always visible */}
               <Link 
-                    href={createPageUrl("aiAssistant")}
-                    className="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200 hidden sm:inline"
-                  >
-                    AI Assistent
-              </Link>
+                  href={createPageUrl("aiAssistant")}
+                  className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-xl font-medium hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 group">
+                  <Brain className="w-4 h-4" />
+                  AI Assistant
+                  <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 transition-transform duration-200" />
+                </Link>
 
               
               {user ? (
@@ -105,7 +115,7 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
                     <span className="text-white font-bold">N</span>
                   </div>
-                  <span className="text-xl font-bold text-gray-900">NurseID</span>
+                  <span className="text-xl font-bold text-gray-900">NCLEX Harmony</span>
                 </div>
                 <p className="text-gray-600">
                   Empowering future nurses with comprehensive exam preparation tools.
@@ -115,8 +125,8 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
               <div>
                 <h3 className="font-semibold text-gray-900 mb-4">Contact</h3>
                 <div className="space-y-2 text-gray-600">
-                  <p>support@nurseid.com</p>
-                  <p>1-800-NURSE-ID</p>
+                  <p>support@nclexharmony.com</p>
+                  <p>1-800-NCLEX-H1</p>
                   <p>Mon-Fri 9AM-6PM EST</p>
                 </div>
               </div>
