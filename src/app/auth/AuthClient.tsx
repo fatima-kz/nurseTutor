@@ -60,7 +60,7 @@ export default function AuthClient() {
             <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <span className="text-white font-bold text-2xl">N</span>
             </div>
-            <h2 className="text-3xl font-bold text-gray-900">Welcome to NurseID</h2>
+            <h2 className="text-3xl font-bold text-gray-900">Welcome to NCLEX Harmony</h2>
             <p className="mt-2 text-gray-600">Your journey to nursing excellence starts here</p>
           </div>
 

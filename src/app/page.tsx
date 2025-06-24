@@ -55,7 +55,7 @@ export default async function Home() {
   const testimonials = [
     {
       name: "Sarah Johnson",
-      text: "NurseID helped me pass my NCLEX on the first try! The AI explanations were incredibly helpful.",
+      text: "NCLEX Harmony helped me pass my NCLEX on the first try! The AI explanations were incredibly helpful.",
       rating: 5,
       image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=100&h=100&fit=crop&crop=face"
     },
@@ -225,7 +225,7 @@ export default async function Home() {
                 <span className="block text-blue-600">Say</span>
               </h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Join thousands of successful nursing students who have passed their exams with NurseID.
+                Join thousands of successful nursing students who have passed their exams with NCLEX Harmony.
               </p>
             </div>
 
@@ -266,7 +266,7 @@ export default async function Home() {
               Ready to Start Your Journey?
             </h2>
             <p className="text-xl text-blue-100 mb-8">
-              Join thousands of nursing students who are already preparing for success with NurseID.
+              Join thousands of nursing students who are already preparing for success with NCLEX Harmony.
             </p>
             <Link 
               href={createPageUrl("Auth")}

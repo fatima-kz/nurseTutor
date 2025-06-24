@@ -1,3 +1,5 @@
+
+
 "use client"
 
 import React from "react";
@@ -148,7 +150,7 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
             </div>
             
             <div className="mt-8 pt-8 border-t border-gray-200 text-center text-gray-600">
-              <p>&copy; 2024 NurseID. All rights reserved.</p>
+              <p>&copy; 2024 NCLEX Harmony. All rights reserved.</p>
             </div>
           </div>
         </footer>

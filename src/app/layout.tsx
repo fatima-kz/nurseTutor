@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NurseID - Get Licensed Faster",
+  title: "NCLEX Harmony - Get Licensed Faster",
   description: "Prepare for the Nurse Exam with Confidence using our AI-powered platform with 1000+ practice questions and personalized feedback.",
 };
 
