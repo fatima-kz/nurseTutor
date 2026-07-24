@@ -1,11 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 
 "use client"
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import test from "node:test";
 import { TestResult } from "@/entities/TestResult";
 import Link from "next/link";
 import { User } from "@/entities/User";
@@ -148,8 +146,9 @@ export default function Test() {
       const currentUser = await User.me();
       setUser(currentUser as UserProfile);
       await loadInitialQuestion();
-    } catch (error)      {
+    } catch (error) {
       console.error("Error initializing test:", error);
+      setLoading(false);
     }
   };
   
@@ -239,6 +238,19 @@ export default function Test() {
     if (loadingNextQuestion) return;
     setLoadingNextQuestion(true);
 
+    const fallbackQuestion = {
+      id: "fallback_" + Date.now(),
+      question_id: Math.floor(Math.random() * 1000),
+      question_text: "What is the primary function of the sinoatrial (SA) node?",
+      option_a: "To pump blood to the lungs",
+      option_b: "To act as the heart's natural pacemaker",
+      option_c: "To filter blood",
+      option_d: "To produce hormones",
+      correct_answer: "B",
+      difficulty: "Easy",
+      explanation: "The sinoatrial (SA) node is the heart's natural pacemaker, responsible for initiating the electrical impulses that cause the heart to beat."
+    };
+
     try {
       // Update user stats first
       if (user) {
@@ -261,49 +273,49 @@ export default function Test() {
       setSelectedAnswer("");
       setAiExplanation("");
 
-      // Keep trying to get next question from Make.com until success
-      if (user?.email && currentQuestion?.question_id || true) {
-        console.log("Waiting for next question from Make.com...");
-        
-        // Poll every 2 seconds until we get a question
-       
-          try {
-            const res = await fetch(`/api/get-next-question`);
-            
-            if (res.ok) {
-              const data = await res.json();              
-              if (data.question) {
-                console.log("Got next question from Make.com:", data.question);
-                setCurrentQuestion(data.question);
-                setLoadingNextQuestion(false); // Only stop loading when we get a question
-                // Exit the loop when we get a question
-              } else {
-                console.log("No question available yet, waiting...");
-              }
+      console.log("Waiting for next question from Make.com...");
+
+      // Poll for up to 5 attempts (10 seconds total) before falling back
+      let gotQuestion = false;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          const res = await fetch(`/api/get-next-question`);
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data.question) {
+              console.log("Got next question from Make.com:", data.question);
+              setCurrentQuestion(data.question);
+              gotQuestion = true;
+              break;
             } else {
-              console.log("API returned error status:", res.status, "- retrying...");
+              console.log("No question available yet, waiting...");
             }
-          } catch (error) {
-            if (error instanceof Error) {
-              console.log("API call failed:", error.message, "- retrying...");
-            } else {
-              console.log("API call failed:", error, "- retrying...");
-            }
+          } else {
+            console.log("API returned error status:", res.status, "- retrying...");
           }
-          
-          // Wait 2 seconds before trying again
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        
-      } else {
-        throw new Error("Missing user email or current question ID");
-      }    } catch (error) {
+        } catch (error) {
+          if (error instanceof Error) {
+            console.log("API call failed:", error.message, "- retrying...");
+          } else {
+            console.log("API call failed:", error, "- retrying...");
+          }
+        }
+
+        // Wait 2 seconds before trying again
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+
+      if (!gotQuestion) {
+        console.log("No question available after retries, using fallback question");
+        setCurrentQuestion(fallbackQuestion);
+      }
+    } catch (error) {
       console.error("Critical error in handleNextQuestion:", error);
-      // Keep loading state active - don't stop the loading
-      // User can still click "Finish Test" if needed
+      setCurrentQuestion(fallbackQuestion);
     }
-    // Only set loading to false when we successfully get a question
-    // The loading state will be set to false when setCurrentQuestion is called
-    // and the component re-renders with the new question
+
+    setLoadingNextQuestion(false);
   };
   
   const finishTest = async () => {
@@ -327,6 +339,7 @@ export default function Test() {
       router.push('/dashboard');
     } catch (error) {
       console.error("Error saving test result:", error);
+      setFinishingTest(false);
     }
   };
 
