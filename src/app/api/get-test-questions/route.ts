@@ -4,8 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-const TOTAL_QUESTIONS = 10
-
 export async function GET() {
   try {
     const supabase = await createClient()
@@ -13,7 +11,6 @@ export async function GET() {
     const { data: questions, error } = await supabase
       .from('questions')
       .select('id, question_id, question_text, option_a, option_b, option_c, option_d, correct_answer, difficulty')
-      .limit(TOTAL_QUESTIONS)
 
     if (error) {
       console.error('Error fetching questions from Supabase:', error)
@@ -24,10 +21,26 @@ export async function GET() {
       return NextResponse.json({ error: 'No questions available' }, { status: 404 })
     }
 
-    const shuffled = [...questions].sort(() => Math.random() - 0.5)
-    const selected = shuffled.slice(0, Math.min(TOTAL_QUESTIONS, shuffled.length))
+    const grouped: Record<string, typeof questions> = {
+      Easy: [],
+      Medium: [],
+      Hard: [],
+    }
 
-    return NextResponse.json({ questions: selected, total: selected.length })
+    for (const q of questions) {
+      const diff = q.difficulty || 'Medium'
+      if (grouped[diff]) {
+        grouped[diff].push(q)
+      } else {
+        grouped['Medium'].push(q)
+      }
+    }
+
+    for (const key of Object.keys(grouped)) {
+      grouped[key].sort(() => Math.random() - 0.5)
+    }
+
+    return NextResponse.json({ questions: grouped })
   } catch (error) {
     console.error('Error in get-test-questions:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

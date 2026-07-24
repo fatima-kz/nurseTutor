@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { TestResult } from "@/entities/TestResult";
 import { User as UserEntity } from "@/entities/User";
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Brain, Loader2, CheckCircle, XCircle, ArrowLeft, ArrowRight, BookOpen, Clock, Flag } from "lucide-react";
+import { Brain, Loader2, CheckCircle, XCircle, ArrowLeft, ArrowRight, BookOpen, Clock, Flag, TrendingUp } from "lucide-react";
 import { createPageUrl } from "@/lib/utils";
 import Layout from "@/components/Layout";
 
@@ -33,15 +33,38 @@ interface Question {
   explanation?: string;
 }
 
+interface AskedQuestion extends Question {
+  questionNumber: number;
+  selectedAnswer: string;
+  isCorrect: boolean;
+}
+
+type Difficulty = "Easy" | "Medium" | "Hard";
+
 const TOTAL_QUESTIONS = 10;
+const DIFFICULTY_ORDER: Difficulty[] = ["Easy", "Medium", "Hard"];
+
+function adjustDifficulty(current: Difficulty, correct: boolean): Difficulty {
+  const idx = DIFFICULTY_ORDER.indexOf(current);
+  if (correct) {
+    return DIFFICULTY_ORDER[Math.min(idx + 1, DIFFICULTY_ORDER.length - 1)];
+  }
+  return DIFFICULTY_ORDER[Math.max(idx - 1, 0)];
+}
 
 export default function Test() {
   const router = useRouter();
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [questionPool, setQuestionPool] = useState<Record<Difficulty, Question[]>>({
+    Easy: [],
+    Medium: [],
+    Hard: [],
+  });
+  const [askedQuestions, setAskedQuestions] = useState<AskedQuestion[]>([]);
+  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
+  const [currentDifficulty, setCurrentDifficulty] = useState<Difficulty>("Medium");
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [showResult, setShowResult] = useState(false);
-  const [isCorrect, setIsCorrect] = useState(false);
+  const [lastWasCorrect, setLastWasCorrect] = useState(false);
   const [aiExplanation, setAiExplanation] = useState("");
   const [fetchingExplanation, setFetchingExplanation] = useState(false);
   const [submittingAnswer, setSubmittingAnswer] = useState(false);
@@ -49,7 +72,7 @@ export default function Test() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [testFinished, setTestFinished] = useState(false);
 
   useEffect(() => {
     initializeTest();
@@ -67,10 +90,31 @@ export default function Test() {
         throw new Error("Failed to load questions");
       }
       const data = await res.json();
-      if (!data.questions || data.questions.length === 0) {
+      if (!data.questions || data.questions.Easy?.length + data.questions.Medium?.length + data.questions.Hard?.length === 0) {
         throw new Error("No questions available");
       }
-      setQuestions(data.questions);
+
+      const pool = data.questions as Record<Difficulty, Question[]>;
+      setQuestionPool(pool);
+
+      // Start with a Medium question
+      const startDifficulty: Difficulty = "Medium";
+      let firstQuestion: Question | null = null;
+
+      if (pool[startDifficulty].length > 0) {
+        firstQuestion = pool[startDifficulty][0];
+      } else if (pool.Easy.length > 0) {
+        firstQuestion = pool.Easy[0];
+      } else if (pool.Hard.length > 0) {
+        firstQuestion = pool.Hard[0];
+      }
+
+      if (!firstQuestion) {
+        throw new Error("No questions available");
+      }
+
+      setCurrentQuestion(firstQuestion);
+      setCurrentDifficulty(startDifficulty);
     } catch (error) {
       console.error("Error initializing test:", error);
       setLoadError(error instanceof Error ? error.message : "Failed to load test");
@@ -79,16 +123,58 @@ export default function Test() {
     }
   };
 
-  const currentQuestion = questions[currentIndex];
+  const getNextQuestion = useCallback(
+    (difficulty: Difficulty, excludeIds: Set<string>): Question | null => {
+      const pool = questionPool[difficulty];
+      if (!pool || pool.length === 0) return null;
+
+      // Try to find a question at this difficulty that hasn't been asked
+      for (const q of pool) {
+        if (!excludeIds.has(q.id)) {
+          return q;
+        }
+      }
+
+      // If all questions at this difficulty have been used, fall back to other difficulties
+      const fallbackOrder: Difficulty[] =
+        difficulty === "Medium"
+          ? ["Easy", "Hard"]
+          : difficulty === "Hard"
+          ? ["Medium", "Easy"]
+          : ["Medium", "Hard"];
+
+      for (const fallbackDiff of fallbackOrder) {
+        const fallbackPool = questionPool[fallbackDiff];
+        if (fallbackPool) {
+          for (const q of fallbackPool) {
+            if (!excludeIds.has(q.id)) {
+              return q;
+            }
+          }
+        }
+      }
+
+      // If everything has been used, allow repeats
+      return pool[0];
+    },
+    [questionPool]
+  );
 
   const handleAnswerSubmit = async () => {
     if (!selectedAnswer || !currentQuestion || submittingAnswer) return;
 
     setSubmittingAnswer(true);
     const correct = selectedAnswer === currentQuestion.correct_answer;
-    setIsCorrect(correct);
+    setLastWasCorrect(correct);
     setShowResult(true);
-    setAnswers((prev) => ({ ...prev, [currentIndex]: selectedAnswer }));
+
+    const askedEntry: AskedQuestion = {
+      ...currentQuestion,
+      questionNumber: askedQuestions.length + 1,
+      selectedAnswer,
+      isCorrect: correct,
+    };
+    setAskedQuestions((prev) => [...prev, askedEntry]);
 
     setFetchingExplanation(true);
     try {
@@ -116,30 +202,40 @@ export default function Test() {
   };
 
   const handleNextQuestion = () => {
-    if (currentIndex + 1 >= questions.length) {
+    if (askedQuestions.length >= TOTAL_QUESTIONS) {
       finishTest();
       return;
     }
-    setCurrentIndex((prev) => prev + 1);
-    setSelectedAnswer("");
-    setShowResult(false);
-    setAiExplanation("");
+
+    // CAT: adjust difficulty based on last answer
+    const nextDifficulty = adjustDifficulty(currentDifficulty, lastWasCorrect);
+    setCurrentDifficulty(nextDifficulty);
+
+    const excludeIds = new Set(askedQuestions.map((q) => q.id));
+    excludeIds.add(currentQuestion!.id);
+
+    const next = getNextQuestion(nextDifficulty, excludeIds);
+    if (next) {
+      setCurrentQuestion(next);
+      setSelectedAnswer("");
+      setShowResult(false);
+      setAiExplanation("");
+    } else {
+      finishTest();
+    }
   };
 
-  const correctCount = Object.entries(answers).filter(([idx, ans]) => {
-    const q = questions[Number(idx)];
-    return q && ans === q.correct_answer;
-  }).length;
-
-  const answeredCount = Object.keys(answers).length;
+  const correctCount = askedQuestions.filter((q) => q.isCorrect).length;
+  const answeredCount = askedQuestions.length;
   const percentageScore = Math.round((correctCount / TOTAL_QUESTIONS) * 100);
 
   const finishTest = async () => {
-    if (finishingTest) return;
+    if (finishingTest || testFinished) return;
     setFinishingTest(true);
+    setTestFinished(true);
 
     try {
-      if (user) {
+      if (user && answeredCount > 0) {
         await TestResult.create({
           user_email: user.email,
           questions_answered: answeredCount,
@@ -166,14 +262,14 @@ export default function Test() {
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-blue-600" />
-            <p className="text-gray-600">Loading your test...</p>
+            <p className="text-gray-600">Loading your adaptive test...</p>
           </div>
         </div>
       </Layout>
     );
   }
 
-  if (loadError || questions.length === 0) {
+  if (loadError || !currentQuestion) {
     return (
       <Layout currentPageName="Test">
         <div className="min-h-screen flex items-center justify-center">
@@ -197,7 +293,7 @@ export default function Test() {
       <div className="min-h-screen py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-6">
             <Link
               href={createPageUrl("Dashboard")}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
@@ -206,10 +302,18 @@ export default function Test() {
             </Link>
             <div className="flex items-center gap-3">
               <Badge variant="outline" className="px-3 py-1">
-                <Clock className="w-4 h-4 mr-1" /> Question {currentIndex + 1} of {TOTAL_QUESTIONS}
+                <Clock className="w-4 h-4 mr-1" /> {answeredCount}/{TOTAL_QUESTIONS}
               </Badge>
               <Badge className="bg-blue-100 text-blue-800 px-3 py-1">
                 Score: {correctCount}/{TOTAL_QUESTIONS}
+              </Badge>
+              <Badge className={`px-3 py-1 ${
+                currentDifficulty === "Easy" ? "bg-green-100 text-green-800" :
+                currentDifficulty === "Medium" ? "bg-yellow-100 text-yellow-800" :
+                "bg-red-100 text-red-800"
+              }`}>
+                <TrendingUp className="w-3 h-3 mr-1" />
+                {currentDifficulty}
               </Badge>
             </div>
           </div>
@@ -217,7 +321,7 @@ export default function Test() {
           {/* Progress Bar */}
           <div className="mb-8">
             <div className="flex justify-between text-sm text-gray-600 mb-2">
-              <span>Progress</span>
+              <span>Adaptive Progress</span>
               <span>{answeredCount}/{TOTAL_QUESTIONS} answered</span>
             </div>
             <Progress value={(answeredCount / TOTAL_QUESTIONS) * 100} className="h-2" />
@@ -229,7 +333,7 @@ export default function Test() {
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <BookOpen className="w-5 h-5" />
-                  Question {currentIndex + 1} of {TOTAL_QUESTIONS}
+                  Question {answeredCount + 1} of {TOTAL_QUESTIONS}
                 </CardTitle>
                 {currentQuestion.difficulty && (
                   <Badge className={`${
@@ -322,9 +426,9 @@ export default function Test() {
               {/* Result and Explanation */}
               {showResult && (
                 <div className="space-y-4">
-                  <Alert className={isCorrect ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
-                    <AlertDescription className={isCorrect ? "text-green-800" : "text-red-800"}>
-                      {isCorrect ? (
+                  <Alert className={lastWasCorrect ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
+                    <AlertDescription className={lastWasCorrect ? "text-green-800" : "text-red-800"}>
+                      {lastWasCorrect ? (
                         <>
                           <CheckCircle className="w-4 h-4 inline mr-2" />
                           Correct! Well done!
@@ -337,6 +441,25 @@ export default function Test() {
                       )}
                     </AlertDescription>
                   </Alert>
+
+                  {/* Next difficulty indicator */}
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <TrendingUp className="w-4 h-4" />
+                    {askedQuestions.length < TOTAL_QUESTIONS ? (
+                      <span>
+                        Next question difficulty:{" "}
+                        <span className={`font-medium ${
+                          adjustDifficulty(currentDifficulty, lastWasCorrect) === "Easy" ? "text-green-600" :
+                          adjustDifficulty(currentDifficulty, lastWasCorrect) === "Medium" ? "text-yellow-600" :
+                          "text-red-600"
+                        }`}>
+                          {adjustDifficulty(currentDifficulty, lastWasCorrect)}
+                        </span>
+                      </span>
+                    ) : (
+                      <span>This was the last question</span>
+                    )}
+                  </div>
 
                   {/* AI Explanation */}
                   {fetchingExplanation && !aiExplanation && (
@@ -365,28 +488,11 @@ export default function Test() {
 
                   {/* Action Buttons */}
                   <div className="flex gap-3 pt-2">
-                    <Button
-                      onClick={handleNextQuestion}
-                      disabled={finishingTest}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      {currentIndex + 1 >= TOTAL_QUESTIONS ? (
-                        <>
-                          <Flag className="w-4 h-4 mr-2" />
-                          Finish Test
-                        </>
-                      ) : (
-                        <>
-                          Next Question <ArrowRight className="w-4 h-4 ml-2" />
-                        </>
-                      )}
-                    </Button>
-                    {currentIndex + 1 < TOTAL_QUESTIONS && (
+                    {askedQuestions.length >= TOTAL_QUESTIONS ? (
                       <Button
                         onClick={finishTest}
                         disabled={finishingTest}
-                        variant="outline"
-                        className="flex-1"
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                       >
                         {finishingTest ? (
                           <>
@@ -396,13 +502,41 @@ export default function Test() {
                         ) : (
                           <>
                             <Flag className="w-4 h-4 mr-2" />
-                            End Test Early
+                            Finish Test
                           </>
                         )}
                       </Button>
+                    ) : (
+                      <>
+                        <Button
+                          onClick={handleNextQuestion}
+                          disabled={finishingTest}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          Next Question <ArrowRight className="w-4 h-4 ml-2" />
+                        </Button>
+                        <Button
+                          onClick={finishTest}
+                          disabled={finishingTest}
+                          variant="outline"
+                          className="flex-1"
+                        >
+                          {finishingTest ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Finishing...
+                            </>
+                          ) : (
+                            <>
+                              <Flag className="w-4 h-4 mr-2" />
+                              End Test Early
+                            </>
+                          )}
+                        </Button>
+                      </>
                     )}
                   </div>
-                  {currentIndex + 1 < TOTAL_QUESTIONS && (
+                  {askedQuestions.length < TOTAL_QUESTIONS && (
                     <p className="text-xs text-gray-500 text-center">
                       Ending early will score you out of {TOTAL_QUESTIONS} (unanswered count as incorrect)
                     </p>
@@ -411,36 +545,6 @@ export default function Test() {
               )}
             </CardContent>
           </Card>
-
-          {/* Question Navigator */}
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            {questions.map((_, idx) => {
-              const isAnswered = idx in answers;
-              const isCurrent = idx === currentIndex;
-              return (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    if (idx !== currentIndex) {
-                      setCurrentIndex(idx);
-                      setSelectedAnswer(answers[idx] || "");
-                      setShowResult(idx in answers);
-                      setAiExplanation("");
-                    }
-                  }}
-                  className={`w-9 h-9 rounded-lg text-sm font-medium transition-all ${
-                    isCurrent
-                      ? "bg-blue-600 text-white"
-                      : isAnswered
-                      ? "bg-green-100 text-green-700 border border-green-300 hover:bg-green-200"
-                      : "bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200"
-                  }`}
-                >
-                  {idx + 1}
-                </button>
-              );
-            })}
-          </div>
         </div>
       </div>
     </Layout>
